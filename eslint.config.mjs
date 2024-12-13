@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   {
-    ignores: ['.lintstagedrc.js', 'eslint.config.mjs'],
+    ignores: ['.lintstagedrc.js', 'eslint.config.mjs', '.storybook/'],
   },
   ...compat.extends(
     'plugin:@typescript-eslint/recommended',
