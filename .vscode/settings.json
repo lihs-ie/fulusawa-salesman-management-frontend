@@ -4,4 +4,19 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "jest.rootPath": "src",
+// "terminal.integrated.profiles.osx": {
+//   "zsh": {
+//     "path": "/bin/zsh",
+//     "args": []
+//   },
+//   "bash": {
+//     "path": "/bin/bash",
+//     "args": []
+//   },
+//   "custom-zsh": {
+//     "path": "/bin/zsh",
+//     "args": ["--login"]
+//   }
+// },
 }

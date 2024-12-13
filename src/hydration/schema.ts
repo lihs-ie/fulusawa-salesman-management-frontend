@@ -39,7 +39,7 @@ export const addNullableRecursion = <B extends z.ZodObject<any>, F extends objec
   return combinedSchema;
 };
 
-export const createEnumSchema = <T extends z.EnumLike>(target: T) => {
+export const enumSchema = <T extends z.EnumLike>(target: T) => {
   return z.preprocess((value) => {
     if (typeof value !== 'string') {
       return false;
