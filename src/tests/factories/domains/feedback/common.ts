@@ -48,8 +48,8 @@ export class FeedbackFactory extends Factory<Feedback, FeedbackProperties> {
       type: Builder.get(TypeFactory).buildWith(seed),
       status: Builder.get(StatusFactory).buildWith(seed),
       content: Builder.get(StringFactory(1, Feedback.MAX_CONTENT_LENGTH)).buildWith(seed),
-      createdAt: new Date(seed),
-      updatedAt: new Date(seed + 1),
+      createdAt: new Date(Math.floor(seed / 2)),
+      updatedAt: new Date(Math.floor(seed / 2) + 1),
       ...overrides,
     };
   }
@@ -66,8 +66,10 @@ export class FeedbackFactory extends Factory<Feedback, FeedbackProperties> {
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<Feedback>;
+  onPersist?: (instance: Feedback) => void;
+  onRemove?: (instances: List<Feedback>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
@@ -75,7 +77,11 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
     return new (class extends Repository {
       private instances: Map<FeedbackIdentifier, Feedback>;
 
-      public constructor(instances: List<Feedback>) {
+      public constructor(
+        instances: List<Feedback>,
+        private readonly onPersist?: (instance: Feedback) => void,
+        private readonly onRemove?: (instances: List<Feedback>) => void
+      ) {
         super();
 
         this.instances = Map(instances.toMap().mapKeys((_, instance) => instance.identifier));
@@ -87,6 +93,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(feedback.identifier, feedback);
+
+        if (this.onPersist) {
+          this.onPersist(feedback);
+        }
       }
 
       public async update(feedback: Feedback): Promise<void> {
@@ -95,6 +105,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(feedback.identifier, feedback);
+
+        if (this.onPersist) {
+          this.onPersist(feedback);
+        }
       }
 
       public async find(identifier: FeedbackIdentifier): Promise<Feedback> {
@@ -150,18 +164,53 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.delete(identifier);
+
+        if (this.onRemove) {
+          this.onRemove(this.instances.toList());
+        }
       }
-    })(properties.instances);
+    })(properties.instances, properties.onPersist, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
     return {
-      instances: Builder.get(FeedbackFactory).buildListWith(seed, 10),
+      instances: Builder.get(FeedbackFactory).buildListWith(10, seed),
       ...overrides,
     };
   }
 
   protected retrieve(_: Repository): RepositoryProperties {
     throw new Error('Repository cannot be retrieved.');
+  }
+}
+
+expect.extend({
+  toBeSameFeedback(actual: Feedback, expected: Feedback) {
+    try {
+      expect(actual.identifier).toEqualValueObject(expected.identifier);
+      expect(actual.type).toBe(expected.type);
+      expect(actual.status).toBe(expected.status);
+      expect(actual.content).toBe(expected.content);
+      expect(actual.createdAt.toISOString()).toBe(expected.createdAt.toISOString());
+      expect(actual.updatedAt.toISOString()).toBe(expected.updatedAt.toISOString());
+
+      return {
+        message: () => 'OK',
+        pass: true,
+      };
+    } catch (error) {
+      return {
+        message: () => (error as Error).message,
+        pass: false,
+      };
+    }
+  },
+});
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeSameFeedback(expected: Feedback): R;
+    }
   }
 }

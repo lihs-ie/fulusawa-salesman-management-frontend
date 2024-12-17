@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { List, OrderedMap } from 'immutable';
 
 import { CustomerIdentifier } from 'domains/customer';
 import {
@@ -56,7 +56,7 @@ export class TransactionHistoryFactory extends Factory<
       user: Builder.get(UserIdentifierFactory).buildWith(seed),
       type: Builder.get(TypeFactory).build(),
       description: null,
-      date: new Date(seed),
+      date: new Date(Math.floor(seed / 2)),
       ...overrides,
     };
   }
@@ -73,19 +73,25 @@ export class TransactionHistoryFactory extends Factory<
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<TransactionHistory>;
+  onPersist?: (instance: TransactionHistory) => void;
+  onRemove?: (instances: List<TransactionHistory>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
   protected instantiate(properties: RepositoryProperties): Repository {
     return new (class extends Repository {
-      private instances: Map<TransactionHistoryIdentifier, TransactionHistory>;
+      private instances: OrderedMap<TransactionHistoryIdentifier, TransactionHistory>;
 
-      public constructor(instances: List<TransactionHistory>) {
+      public constructor(
+        instances: List<TransactionHistory>,
+        private readonly onPersist?: (instance: TransactionHistory) => void,
+        private readonly onRemove?: (instances: List<TransactionHistory>) => void
+      ) {
         super();
 
-        this.instances = instances.toMap().mapKeys((_, instance) => instance.identifier);
+        this.instances = instances.toOrderedMap().mapKeys((_, instance) => instance.identifier);
       }
 
       public async add(transactionHistory: TransactionHistory): Promise<void> {
@@ -94,6 +100,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(transactionHistory.identifier, transactionHistory);
+
+        if (this.onPersist) {
+          this.onPersist(transactionHistory);
+        }
       }
 
       public async update(transactionHistory: TransactionHistory): Promise<void> {
@@ -102,6 +112,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(transactionHistory.identifier, transactionHistory);
+
+        if (this.onPersist) {
+          this.onPersist(transactionHistory);
+        }
       }
 
       public async find(identifier: TransactionHistoryIdentifier): Promise<TransactionHistory> {
@@ -155,8 +169,12 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.remove(identifier);
+
+        if (this.onRemove) {
+          this.onRemove(this.instances.toList());
+        }
       }
-    })(properties.instances);
+    })(properties.instances, properties.onPersist, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
@@ -166,7 +184,38 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
     };
   }
 
-  protected retrieve(instance: Repository): RepositoryProperties {
+  protected retrieve(_: Repository): RepositoryProperties {
     throw new Error('Repository cannot be retrieved.');
+  }
+}
+
+expect.extend({
+  toBeSameTransactionHistory(actual: TransactionHistory, expected: TransactionHistory) {
+    try {
+      expect(actual.identifier).toEqualValueObject(expected.identifier);
+      expect(actual.customer).toEqualValueObject(expected.customer);
+      expect(actual.user).toEqualValueObject(expected.user);
+      expect(actual.type).toBe(expected.type);
+      expect(actual.description).toBe(expected.description);
+      expect(actual.date.toISOString()).toBe(expected.date.toISOString());
+
+      return {
+        message: () => 'OK',
+        pass: true,
+      };
+    } catch (error) {
+      return {
+        message: () => (error as Error).message,
+        pass: false,
+      };
+    }
+  },
+});
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeSameTransactionHistory(expected: TransactionHistory): R;
+    }
   }
 }

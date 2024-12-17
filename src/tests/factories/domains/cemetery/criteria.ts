@@ -4,7 +4,7 @@ import { Builder, Factory } from 'tests/factories/common';
 
 import { CustomerIdentifierFactory } from '../customer';
 
-type CriteriaProperties = {
+export type CriteriaProperties = {
   customer: CustomerIdentifier | null;
   fulfilled?: boolean;
 };

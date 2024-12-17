@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { List, OrderedMap } from 'immutable';
 
 import { Cemetery, CemeteryIdentifier, CemeteryType, Criteria, Repository } from 'domains/cemetery';
 import { CustomerIdentifier } from 'domains/customer';
@@ -58,24 +58,35 @@ export class CemeteryFactory extends Factory<Cemetery, CemeteryProperties> {
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<Cemetery>;
+  onPersist?: (cemetery: Cemetery) => void;
+  onRemove?: (cemeteries: List<Cemetery>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
   protected instantiate(properties: RepositoryProperties): Repository {
     return new (class extends Repository {
-      private instances: Map<CemeteryIdentifier, Cemetery>;
+      private instances: OrderedMap<CemeteryIdentifier, Cemetery>;
 
-      public constructor(instances: List<Cemetery>) {
+      public constructor(
+        instances: List<Cemetery>,
+        private readonly onPersist?: (cemetery: Cemetery) => void,
+        private readonly onRemove?: (cemeteries: List<Cemetery>) => void
+      ) {
         super();
 
-        this.instances = instances.toMap().mapKeys((_, instance) => instance.identifier);
+        this.instances = instances.toOrderedMap().mapKeys((_, instance) => instance.identifier);
+        this.onPersist = onPersist;
       }
 
       public add(cemetery: Cemetery): Promise<void> {
         if (this.instances.has(cemetery.identifier)) {
           throw new Error('Cemetery already exists.');
+        }
+
+        if (this.onPersist) {
+          this.onPersist(cemetery);
         }
 
         this.instances = this.instances.set(cemetery.identifier, cemetery);
@@ -89,6 +100,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(cemetery.identifier, cemetery);
+
+        if (this.onPersist) {
+          this.onPersist(cemetery);
+        }
 
         return Promise.resolve();
       }
@@ -122,14 +137,18 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
 
         this.instances = this.instances.delete(identifier);
 
+        if (this.onRemove) {
+          this.onRemove(this.instances.toList());
+        }
+
         return Promise.resolve();
       }
-    })(properties.instances);
+    })(properties.instances, properties.onPersist, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
     return {
-      instances: Builder.get(CemeteryFactory).buildListWith(seed, 10),
+      instances: Builder.get(CemeteryFactory).buildListWith(10, seed),
       ...overrides,
     };
   }
