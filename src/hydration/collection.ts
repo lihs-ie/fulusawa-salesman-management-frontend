@@ -1,4 +1,4 @@
-import { List, Map, OrderedMap } from 'immutable';
+import { List, Map, OrderedMap, Set } from 'immutable';
 
 import { Hydrator } from './common';
 import { PrimitiveHydrator, Primitives } from './common/primitive';
@@ -19,6 +19,13 @@ const tryParse = <T>(payload: string): T => {
     return payload as T;
   }
 };
+
+export type SetPayload<P> = P[];
+
+export const SetHydrator = <T, P>(inner: Hydrator<T, P>): Hydrator<Set<T>, SetPayload<P>> => ({
+  hydrate: (value) => Set(value.map(inner.hydrate)),
+  dehydrate: (value) => value.map(inner.dehydrate).toArray(),
+});
 
 export const MapHydrator = <KV, KP, VV, VP>(
   keyHydrator: Hydrator<KV, KP>,

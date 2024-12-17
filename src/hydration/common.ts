@@ -73,3 +73,8 @@ export const OptionalHydrator = <T, P>(real: Hydrator<T, P>): Hydrator<T | null,
     return real.dehydrate(value);
   },
 });
+
+export const DateHydrator: Hydrator<Date, string> = {
+  hydrate: (value) => new Date(value),
+  dehydrate: (value) => value.toISOString(),
+};
