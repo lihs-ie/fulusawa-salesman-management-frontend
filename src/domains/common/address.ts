@@ -1,4 +1,4 @@
-import { Map } from 'immutable';
+import { Map, Set } from 'immutable';
 
 import { ValueObject } from './value-object';
 
@@ -53,6 +53,20 @@ export const Prefecture = {
 } as const;
 
 export type Prefecture = (typeof Prefecture)[keyof typeof Prefecture];
+
+const candidates = Set(Object.values(Prefecture));
+
+export const isPrefecture = (value: unknown): value is Prefecture => {
+  return candidates.has(value as Prefecture);
+};
+
+export const asPrefecture = (prefecture: unknown): Prefecture => {
+  if (isPrefecture(prefecture)) {
+    return prefecture;
+  }
+
+  throw new Error(`Prefecture ${prefecture} is not supported.`);
+};
 
 export class PostalCode extends ValueObject {
   public static readonly VALID_FIRST_PATTERN: RegExp = /^\d{3}$/;

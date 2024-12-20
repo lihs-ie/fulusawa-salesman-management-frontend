@@ -53,13 +53,13 @@ export class AuthenticationFactory extends Factory<Authentication, Authenticatio
         ? null
         : Builder.get(TokenFactory).buildWith(seed, {
             type: TokenType.ACCESS,
-            expiresAt: new Date(seed + 1000),
+            expiresAt: new Date(Math.floor(seed / 1000) + 1000),
           }),
       refreshToken: overrides.expired?.refresh
         ? null
         : Builder.get(TokenFactory).buildWith(seed, {
             type: TokenType.REFRESH,
-            expiresAt: new Date(seed + 2000),
+            expiresAt: new Date(Math.floor(seed / 1000) + 2000),
           }),
       ...overrides,
     };
@@ -204,5 +204,42 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
 
   protected retrieve(_: Repository): RepositoryProperties {
     throw new Error('Repository cannot be retrieved.');
+  }
+}
+
+expect.extend({
+  toBeSameAuthentication(actual: Authentication, expected: Authentication) {
+    try {
+      expect(actual.identifier).toEqualValueObject(expected.identifier);
+      expect(actual.user).toEqualValueObject(expected.user);
+      expect(actual.accessToken).toBeNullOr(
+        expected.accessToken,
+        (expectedAccessToken, actualAccessToken) =>
+          expect(actualAccessToken).toEqualValueObject(expectedAccessToken)
+      );
+      expect(actual.refreshToken).toBeNullOr(
+        expected.refreshToken,
+        (expectedRefreshToken, actualRefreshToken) =>
+          expect(actualRefreshToken).toEqualValueObject(expectedRefreshToken)
+      );
+
+      return {
+        message: () => 'OK',
+        pass: true,
+      };
+    } catch (error) {
+      return {
+        message: () => (error as Error).message,
+        pass: false,
+      };
+    }
+  },
+});
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeSameAuthentication(expected: Authentication): R;
+    }
   }
 }

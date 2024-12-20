@@ -1,4 +1,4 @@
-import { Map } from 'immutable';
+import { Map, Set } from 'immutable';
 
 import { ValueObject } from 'domains/common';
 
@@ -10,6 +10,20 @@ export const Type = {
 } as const;
 
 export type Type = (typeof Type)[keyof typeof Type];
+
+export const isType = (value: unknown): value is Type => {
+  const candidates = Set(Object.values(Type));
+
+  return candidates.has(value as Type);
+};
+
+export const asType = (value: unknown): Type => {
+  if (isType(value)) {
+    return value;
+  }
+
+  throw new Error(`Type ${value} is not supported.`);
+};
 
 export class RepeatFrequency extends ValueObject {
   private DAYS_IN_A_WEEK = 7;

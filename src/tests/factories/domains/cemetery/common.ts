@@ -165,7 +165,7 @@ expect.extend({
       expect(expected.customer.equals(actual.customer)).toBeTruthy();
       expect(expected.name).toBe(actual.name);
       expect(expected.type).toBe(actual.type);
-      expect(expected.construction).toBe(actual.construction);
+      expect(expected.construction.toISOString()).toBe(actual.construction.toISOString());
       expect(expected.inHouse).toBe(actual.inHouse);
 
       return {

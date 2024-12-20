@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 
 import { Address, PhoneNumber, UniversallyUniqueIdentifier } from 'domains/common';
 import { UserIdentifier } from 'domains/user';
@@ -17,6 +17,20 @@ export const Result = {
 } as const;
 
 export type Result = (typeof Result)[keyof typeof Result];
+
+export const isResult = (value: unknown): value is Result => {
+  const candidates = Set(Object.values(Result));
+
+  return candidates.has(value as Result);
+};
+
+export const asResult = (value: unknown): Result => {
+  if (isResult(value)) {
+    return value;
+  }
+
+  throw new Error(`Result ${value} is not supported.`);
+};
 
 export class Visit {
   public static readonly MAX_NOTE_LENGTH = 1000;

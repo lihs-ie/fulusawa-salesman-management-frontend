@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 
 import { UniversallyUniqueIdentifier } from 'domains/common';
 import { CustomerIdentifier } from 'domains/customer';
@@ -23,6 +23,20 @@ export const Type = {
 } as const;
 
 export type Type = (typeof Type)[keyof typeof Type];
+
+export const isType = (value: unknown): value is Type => {
+  const candidates = Set(Object.values(Type));
+
+  return candidates.has(value as Type);
+};
+
+export const asType = (value: unknown): Type => {
+  if (isType(value)) {
+    return value;
+  }
+
+  throw new Error(`Type ${value} is not supported.`);
+};
 
 export class TransactionHistory {
   public static readonly MAX_DESCRIPTION_LENGTH = 1000;

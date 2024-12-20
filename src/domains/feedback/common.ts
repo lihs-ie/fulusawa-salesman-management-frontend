@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 
 import { UniversallyUniqueIdentifier } from 'domains/common';
 
@@ -19,6 +19,20 @@ export const Type = {
 
 export type Type = (typeof Type)[keyof typeof Type];
 
+export const isType = (value: unknown): value is Type => {
+  const candidates = Set(Object.values(Type));
+
+  return candidates.has(value as Type);
+};
+
+export const asType = (value: unknown): Type => {
+  if (isType(value)) {
+    return value;
+  }
+
+  throw new Error(`Type ${value} is not supported.`);
+};
+
 export const Status = {
   WAITING: 'WAITING',
   IN_PROGRESS: 'IN_PROGRESS',
@@ -27,6 +41,20 @@ export const Status = {
 } as const;
 
 export type Status = (typeof Status)[keyof typeof Status];
+
+export const isStatus = (value: unknown): value is Status => {
+  const candidates = Set(Object.values(Status));
+
+  return candidates.has(value as Status);
+};
+
+export const asStatus = (value: unknown): Status => {
+  if (isStatus(value)) {
+    return value;
+  }
+
+  throw new Error(`Status ${value} is not supported.`);
+};
 
 export class Feedback {
   public static readonly MAX_CONTENT_LENGTH = 1000;
