@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 import { Criteria } from 'domains/cemetery';
 import { asPayload, Hydrator, OptionalHydrator } from 'hydration/common';
-import { CustomerIdentifierHydrator, customerIdentifierSchema } from 'hydration/customer/common';
+import {
+  CustomerIdentifierHydrator,
+  customerIdentifierSchema,
+} from 'hydration/customer/identifier';
 
 export const criteriaSchema = z
   .object({

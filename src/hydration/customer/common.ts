@@ -1,30 +1,20 @@
 import { z } from 'zod';
 
-import { Customer, CustomerIdentifier } from 'domains/customer';
-import { CemeteryIdentifierHydrator, cemeteryIdentifierSchema } from 'hydration/cemetery';
+import { Customer } from 'domains/customer';
+import {
+  CemeteryIdentifierHydrator,
+  cemeteryIdentifierSchema,
+} from 'hydration/cemetery/identifier';
 import { ListHydrator } from 'hydration/collection';
 import { asPayload, Hydrator } from 'hydration/common';
 import { AddressHydrator, addressSchema } from 'hydration/common/address';
 import { PhoneNumberHydrator, phoneNumberSchema } from 'hydration/common/contact';
 import {
-  UniversallyUniqueIdentifierHydrator,
-  universallyUniqueIdentifierSchema,
-} from 'hydration/common/identifier';
-import {
   TransactionHistoryIdentifierHydrator,
   transactionHistoryIdentifierSchema,
-} from 'hydration/transaction-history';
+} from 'hydration/transaction-history/identifier';
 
-export const customerIdentifierSchema = universallyUniqueIdentifierSchema.brand(
-  'CustomerIdentifierSchema'
-);
-
-export type CustomerIdentifierPayload = z.infer<typeof customerIdentifierSchema>;
-
-export const CustomerIdentifierHydrator = UniversallyUniqueIdentifierHydrator<
-  CustomerIdentifier,
-  CustomerIdentifierPayload
->(CustomerIdentifier);
+import { CustomerIdentifierHydrator, customerIdentifierSchema } from './identifier';
 
 export const customerSchema = z
   .object({

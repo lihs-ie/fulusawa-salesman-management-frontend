@@ -18,7 +18,7 @@ export class MailAddressFactory extends Factory<MailAddress, MailAddressProperti
   ): MailAddressProperties {
     return {
       local: 'test'.padEnd(Math.min(Math.trunc(seed % 10), 64), '0'),
-      domain: '.com'.padStart(Math.min(Math.trunc(seed % 10), 255), '0'),
+      domain: '.com'.padStart(Math.min(Math.floor(seed % 10) + 5, 255), '0'),
       ...overrides,
     };
   }

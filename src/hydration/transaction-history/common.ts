@@ -1,30 +1,17 @@
 import { z } from 'zod';
 
-import {
-  TransactionHistory,
-  TransactionHistoryIdentifier,
-  Type,
-} from 'domains/transaction-history';
+import { TransactionHistory, Type } from 'domains/transaction-history';
 import { asPayload, Hydrator } from 'hydration/common';
 import {
-  UniversallyUniqueIdentifierHydrator,
-  universallyUniqueIdentifierSchema,
-} from 'hydration/common/identifier';
-import { CustomerIdentifierHydrator, customerIdentifierSchema } from 'hydration/customer';
+  CustomerIdentifierHydrator,
+  customerIdentifierSchema,
+} from 'hydration/customer/identifier';
 import { UserIdentifierHydrator, userIdentifierSchema } from 'hydration/user';
 
-export const transactionHistoryIdentifierSchema = universallyUniqueIdentifierSchema.brand(
-  'TransactionHistoryIdentifierSchema'
-);
-
-export type TransactionHistoryIdentifierPayload = z.infer<
-  typeof transactionHistoryIdentifierSchema
->;
-
-export const TransactionHistoryIdentifierHydrator = UniversallyUniqueIdentifierHydrator<
-  TransactionHistoryIdentifier,
-  TransactionHistoryIdentifierPayload
->(TransactionHistoryIdentifier);
+import {
+  TransactionHistoryIdentifierHydrator,
+  transactionHistoryIdentifierSchema,
+} from './identifier';
 
 export const typeSchema = z.nativeEnum(Type).brand('TypeSchema');
 

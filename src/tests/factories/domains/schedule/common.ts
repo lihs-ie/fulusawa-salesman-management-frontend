@@ -1,4 +1,4 @@
-import { List, Map, Set } from 'immutable';
+import { List, OrderedMap, Set } from 'immutable';
 
 import { DateTimeRange } from 'domains/common';
 import { CustomerIdentifier } from 'domains/customer';
@@ -80,7 +80,7 @@ export class ScheduleFactory extends Factory<Schedule, ScheduleProperties> {
     return {
       identifier: Builder.get(ScheduleIdentifierFactory).buildWith(seed),
       participants: Builder.get(UserIdentifierFactory)
-        .buildListWith(seed, Math.floor(Math.random() * Schedule.MAX_PARTICIPANTS) + 1)
+        .buildListWith(Math.floor(Math.random() * Schedule.MAX_PARTICIPANTS) + 1, seed)
         .toSet(),
       creator: Builder.get(UserIdentifierFactory).buildWith(seed),
       updater: Builder.get(UserIdentifierFactory).buildWith(seed),
@@ -108,19 +108,25 @@ export class ScheduleFactory extends Factory<Schedule, ScheduleProperties> {
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<Schedule>;
+  onPersist?: (instance: Schedule) => void;
+  onRemove?: (instances: List<Schedule>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
   protected instantiate(properties: RepositoryProperties): Repository {
     return new (class extends Repository {
-      private instances: Map<ScheduleIdentifier, Schedule>;
+      private instances: OrderedMap<ScheduleIdentifier, Schedule>;
 
-      public constructor(instances: List<Schedule>) {
+      public constructor(
+        instances: List<Schedule>,
+        private readonly onPersist?: (instance: Schedule) => void,
+        private readonly onRemove?: (instances: List<Schedule>) => void
+      ) {
         super();
 
-        this.instances = instances.toMap().mapKeys((_, instance) => instance.identifier);
+        this.instances = instances.toOrderedMap().mapKeys((_, instance) => instance.identifier);
       }
 
       public async add(schedule: Schedule): Promise<void> {
@@ -129,6 +135,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(schedule.identifier, schedule);
+
+        if (this.onPersist) {
+          this.onPersist(schedule);
+        }
       }
 
       public async update(schedule: Schedule): Promise<void> {
@@ -137,6 +147,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(schedule.identifier, schedule);
+
+        if (this.onPersist) {
+          this.onPersist(schedule);
+        }
       }
 
       public async find(identifier: ScheduleIdentifier): Promise<Schedule> {
@@ -190,13 +204,17 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.delete(identifier);
+
+        if (this.onRemove) {
+          this.onRemove(this.instances.toList());
+        }
       }
-    })(properties.instances);
+    })(properties.instances, properties.onPersist, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
     return {
-      instances: Builder.get(ScheduleFactory).buildListWith(seed, 10),
+      instances: Builder.get(ScheduleFactory).buildListWith(10, seed),
       ...overrides,
     };
   }

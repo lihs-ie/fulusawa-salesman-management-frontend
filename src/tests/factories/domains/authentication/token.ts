@@ -21,7 +21,7 @@ export class TokenFactory extends Factory<Token, TokenProperties> {
     return {
       value: hash(seed).toString(),
       type: Builder.get(TokenTYpeFactory).buildWith(seed),
-      expiresAt: new Date(seed),
+      expiresAt: new Date(Math.floor(seed / 2) + 1000),
       ...overrides,
     };
   }

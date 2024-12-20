@@ -1,23 +1,10 @@
 import { z } from 'zod';
 
-import { Cemetery, CemeteryIdentifier, CemeteryType } from 'domains/cemetery';
+import { Cemetery, CemeteryType } from 'domains/cemetery';
 import { asPayload, Hydrator } from 'hydration/common';
-import {
-  UniversallyUniqueIdentifierHydrator,
-  universallyUniqueIdentifierSchema,
-} from 'hydration/common/identifier';
-import { CustomerIdentifierHydrator, customerIdentifierSchema } from 'hydration/customer/common';
+import { CustomerIdentifierHydrator, customerIdentifierSchema } from 'hydration/customer';
 
-export const cemeteryIdentifierSchema = universallyUniqueIdentifierSchema.brand(
-  'CemeteryIdentifierSchema'
-);
-
-export type CemeteryIdentifierPayload = z.infer<typeof cemeteryIdentifierSchema>;
-
-export const CemeteryIdentifierHydrator = UniversallyUniqueIdentifierHydrator<
-  CemeteryIdentifier,
-  CemeteryIdentifierPayload
->(CemeteryIdentifier);
+import { CemeteryIdentifierHydrator, cemeteryIdentifierSchema } from './identifier';
 
 export const cemeteryTypeSchema = z.nativeEnum(CemeteryType).brand('CemeteryTypeSchema');
 

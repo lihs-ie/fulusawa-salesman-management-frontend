@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { List, OrderedMap } from 'immutable';
 
 import { Criteria, DailyReport, DailyReportIdentifier, Repository } from 'domains/daily-report';
 import { ScheduleIdentifier } from 'domains/schedule';
@@ -43,7 +43,7 @@ export class DailyReportFactory extends Factory<DailyReport, DailyReportProperti
     return {
       identifier: Builder.get(DailyReportIdentifierFactory).buildWith(seed),
       user: Builder.get(UserIdentifierFactory).buildWith(seed),
-      date: new Date(seed),
+      date: new Date(Math.floor(seed / 10)),
       schedules: Builder.get(ScheduleIdentifierFactory).buildListWith(
         Math.floor(Math.random() * 10) + 1,
         seed
@@ -69,18 +69,24 @@ export class DailyReportFactory extends Factory<DailyReport, DailyReportProperti
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<DailyReport>;
+  onPersist?: (instance: DailyReport) => void;
+  onRemove?: (instances: List<DailyReport>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
   protected instantiate(properties: RepositoryProperties): Repository {
     return new (class extends Repository {
-      private instances: Map<DailyReportIdentifier, DailyReport>;
+      private instances: OrderedMap<DailyReportIdentifier, DailyReport>;
 
-      public constructor(instances: List<DailyReport>) {
+      public constructor(
+        instances: List<DailyReport>,
+        private readonly onPersist?: (instance: DailyReport) => void,
+        private readonly onRemove?: (instances: List<DailyReport>) => void
+      ) {
         super();
-        this.instances = instances.toMap().mapKeys((_, instance) => instance.identifier);
+        this.instances = instances.toOrderedMap().mapKeys((_, instance) => instance.identifier);
       }
 
       public async add(dailyReport: DailyReport): Promise<void> {
@@ -89,6 +95,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(dailyReport.identifier, dailyReport);
+
+        if (this.onPersist) {
+          this.onPersist(dailyReport);
+        }
       }
 
       public async update(dailyReport: DailyReport): Promise<void> {
@@ -97,6 +107,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.set(dailyReport.identifier, dailyReport);
+
+        if (this.onPersist) {
+          this.onPersist(dailyReport);
+        }
       }
 
       public async find(identifier: DailyReportIdentifier): Promise<DailyReport> {
@@ -145,8 +159,12 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.delete(identifier);
+
+        if (this.onRemove) {
+          this.onRemove(this.instances.toList());
+        }
       }
-    })(properties.instances);
+    })(properties.instances, properties.onPersist, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
@@ -158,5 +176,45 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
 
   protected retrieve(_: Repository): RepositoryProperties {
     throw new Error('Repository cannot be retrieved.');
+  }
+}
+
+expect.extend({
+  toBeSameDailyReport(actual: DailyReport, expected: DailyReport) {
+    try {
+      expect(actual.identifier).toEqualValueObject(expected.identifier);
+      expect(actual.user).toEqualValueObject(expected.user);
+      expect(actual.date.toISOString()).toBe(expected.date.toISOString());
+
+      expect(actual.schedules.count()).toBe(expected.schedules.count());
+      expected.schedules.zip(actual.schedules).forEach(([expectedSchedule, actualSchedule]) => {
+        expect(actualSchedule).toEqualValueObject(expectedSchedule);
+      });
+
+      expect(actual.visits.count()).toBe(expected.visits.count());
+      expected.visits.zip(actual.visits).forEach(([expectedVisit, actualVisit]) => {
+        expect(actualVisit).toEqualValueObject(expectedVisit);
+      });
+
+      expect(actual.isSubmitted).toBe(expected.isSubmitted);
+
+      return {
+        message: () => 'OK',
+        pass: true,
+      };
+    } catch (error) {
+      return {
+        message: () => (error as Error).message,
+        pass: false,
+      };
+    }
+  },
+});
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeSameDailyReport(expected: DailyReport): R;
+    }
   }
 }

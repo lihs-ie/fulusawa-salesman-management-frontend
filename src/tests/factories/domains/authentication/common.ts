@@ -51,10 +51,16 @@ export class AuthenticationFactory extends Factory<Authentication, Authenticatio
       user: Builder.get(UserIdentifierFactory).buildWith(seed),
       accessToken: overrides.expired?.access
         ? null
-        : Builder.get(TokenFactory).buildWith(seed, { expiresAt: new Date(seed + 1000) }),
+        : Builder.get(TokenFactory).buildWith(seed, {
+            type: TokenType.ACCESS,
+            expiresAt: new Date(seed + 1000),
+          }),
       refreshToken: overrides.expired?.refresh
         ? null
-        : Builder.get(TokenFactory).buildWith(seed, { expiresAt: new Date(seed + 2000) }),
+        : Builder.get(TokenFactory).buildWith(seed, {
+            type: TokenType.REFRESH,
+            expiresAt: new Date(seed + 2000),
+          }),
       ...overrides,
     };
   }
@@ -69,8 +75,10 @@ export class AuthenticationFactory extends Factory<Authentication, Authenticatio
   }
 }
 
-type RepositoryProperties = {
+export type RepositoryProperties = {
   instances: List<Authentication>;
+  onRevoke?: (instance: Authentication) => void;
+  onRemove?: (instances: List<Authentication>) => void;
 };
 
 export class RepositoryFactory extends Factory<Repository, RepositoryProperties> {
@@ -78,7 +86,11 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
     return new (class extends Repository {
       private instances: Map<AuthenticationIdentifier, Authentication>;
 
-      public constructor(instances: List<Authentication>) {
+      public constructor(
+        instances: List<Authentication>,
+        private readonly onRevoke?: (instance: Authentication) => void,
+        private readonly onRemove?: (instances: List<Authentication>) => void
+      ) {
         super();
 
         this.instances = instances.toMap().mapKeys((_, instance) => instance.identifier);
@@ -96,8 +108,8 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         const instance = Builder.get(AuthenticationFactory).build({
           identifier,
           user: Builder.get(UserIdentifierFactory).build(),
-          accessToken: Builder.get(TokenFactory).build(),
-          refreshToken: Builder.get(TokenFactory).build(),
+          accessToken: Builder.get(TokenFactory).build({ type: TokenType.ACCESS }),
+          refreshToken: Builder.get(TokenFactory).build({ type: TokenType.REFRESH }),
         });
 
         this.instances = this.instances.set(identifier, instance);
@@ -111,6 +123,8 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         this.instances = this.instances.delete(identifier);
+
+        this.onRemove?.(this.instances.toList());
       }
 
       public async refresh(value: string): Promise<Authentication> {
@@ -121,7 +135,10 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         }
 
         return Builder.get(AuthenticationFactory).duplicate(instance, {
-          accessToken: Builder.get(TokenFactory).build({ expiresAt: new Date(3000) }),
+          accessToken: Builder.get(TokenFactory).build({
+            type: TokenType.ACCESS,
+            expiresAt: new Date(3000),
+          }),
         });
       }
 
@@ -138,7 +155,14 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
           throw new Error('Invalid token');
         }
 
-        this.instances = this.instances.delete(instance.identifier);
+        const next = Builder.get(AuthenticationFactory).duplicate(
+          instance,
+          type === TokenType.ACCESS ? { accessToken: null } : { refreshToken: null }
+        );
+
+        this.instances = this.instances.set(instance.identifier, next);
+
+        this.onRevoke?.(instance);
       }
 
       public async introspection(value: string, type: TokenType): Promise<boolean> {
@@ -168,17 +192,17 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
           return target.refreshToken.expiresAt > new Date();
         }
       }
-    })(properties.instances);
+    })(properties.instances, properties.onRevoke, properties.onRemove);
   }
 
   protected prepare(overrides: Partial<RepositoryProperties>, seed: number): RepositoryProperties {
     return {
-      instances: Builder.get(AuthenticationFactory).buildListWith(seed, 10),
+      instances: Builder.get(AuthenticationFactory).buildListWith(10, seed),
       ...overrides,
     };
   }
 
-  protected retrieve(instance: Repository): RepositoryProperties {
+  protected retrieve(_: Repository): RepositoryProperties {
     throw new Error('Repository cannot be retrieved.');
   }
 }
