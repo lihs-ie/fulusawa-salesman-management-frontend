@@ -3,6 +3,7 @@ import { v7 as uuid } from 'uuid';
 
 import { Authentication as Entity, Repository, TokenType } from 'domains/authentication';
 import { MailAddressHydrator } from 'hydration/common/contact';
+import { container } from 'providers';
 import { Builder } from 'tests/factories';
 import {
   AuthenticationFactory,
@@ -23,6 +24,8 @@ describe('Package authentication', () => {
         const useCase = new Authentication(Builder.get(RepositoryFactory).build());
 
         expect(useCase).toBeInstanceOf(Authentication);
+
+        const test = container.get(Repository);
       });
     });
 

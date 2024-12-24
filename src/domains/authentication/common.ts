@@ -1,3 +1,5 @@
+import { injectable } from 'inversify';
+
 import { MailAddress } from 'domains/common';
 import { UniversallyUniqueIdentifier } from 'domains/common/identifier';
 import { Password } from 'domains/user';
@@ -38,6 +40,7 @@ export class Authentication {
   }
 }
 
+@injectable()
 export abstract class Repository {
   abstract login(
     identifier: AuthenticationIdentifier,
@@ -51,5 +54,5 @@ export abstract class Repository {
 
   abstract revoke(value: string, type: TokenType): Promise<void>;
 
-  abstract introspection(value: string, type: TokenType): Promise<boolean>;
+  abstract introspect(value: string, type: TokenType): Promise<boolean>;
 }

@@ -1,4 +1,5 @@
 import { List } from 'immutable';
+import { injectable } from 'inversify';
 
 import { UniversallyUniqueIdentifier } from 'domains/common';
 import { ScheduleIdentifier } from 'domains/schedule';
@@ -24,6 +25,7 @@ export class DailyReport {
   ) {}
 }
 
+@injectable()
 export abstract class Repository {
   public abstract add(dailyReport: DailyReport): Promise<void>;
 

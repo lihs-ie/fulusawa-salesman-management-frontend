@@ -1,4 +1,5 @@
 import { List } from 'immutable';
+import { injectable } from 'inversify';
 
 import { CemeteryIdentifier } from 'domains/cemetery';
 import { Address, PhoneNumber, UniversallyUniqueIdentifier } from 'domains/common';
@@ -38,6 +39,7 @@ export class Customer {
   }
 }
 
+@injectable()
 export abstract class Repository {
   public abstract add(customer: Customer): Promise<void>;
 

@@ -1,4 +1,5 @@
 import { List, Map, Set } from 'immutable';
+import { injectable } from 'inversify';
 
 import { DateTimeRange, UniversallyUniqueIdentifier, ValueObject } from 'domains/common';
 import { CustomerIdentifier } from 'domains/customer';
@@ -90,6 +91,7 @@ export class Schedule {
   }
 }
 
+@injectable()
 export abstract class Repository {
   public abstract add(schedule: Schedule): Promise<void>;
 
