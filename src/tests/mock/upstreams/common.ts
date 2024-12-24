@@ -3,11 +3,17 @@ import querystring from 'querystring';
 import { Map } from 'immutable';
 import fetchMock, { MockResponseInit } from 'jest-fetch-mock';
 
+import { Status } from 'aspects/http';
+
 export const Type = {
   OK: 'ok',
   BAD_REQUEST: 'bad_request',
   NOT_FOUND: 'not_found',
+  UNAUTHORIZED: 'unauthorized',
+  FORBIDDEN: 'forbidden',
+  CONFLICT: 'conflict',
   INTERNAL_SERVER_ERROR: 'internal_server_error',
+  SERVICE_UNAVAILABLE: 'service_unavailable',
 } as const;
 
 export type Type = (typeof Type)[keyof typeof Type];
@@ -43,11 +49,31 @@ export abstract class Resource<T, O extends object, Q extends object> {
   protected abstract createSuccessfulResponse(request: Request): Response;
 
   protected createBadRequestResponse(request: Request): Response {
-    return new Response(null, { status: 400 });
+    return new Response(null, { status: Status.BAD_REQUEST });
   }
 
   protected createNotFoundResponse(request: Request): Response {
-    return new Response(null, { status: 404 });
+    return new Response(null, { status: Status.NOT_FOUND });
+  }
+
+  protected createUnauthorizedResponse(request: Request): Response {
+    return new Response(null, { status: Status.UNAUTHORIZED });
+  }
+
+  protected createForbiddenResponse(request: Request): Response {
+    return new Response(null, { status: Status.FORBIDDEN });
+  }
+
+  protected createConflictResponse(request: Request): Response {
+    return new Response(null, { status: Status.CONFLICT });
+  }
+
+  protected createInternalServerErrorResponse(request: Request): Response {
+    return new Response(null, { status: Status.INTERNAL_SERVER_ERROR });
+  }
+
+  protected createServiceUnavailableResponse(request: Request): Response {
+    return new Response(null, { status: Status.SERVICE_UNAVAILABLE });
   }
 
   // リソース固有のレスポンス種別に応じたレスポンスを生成するメソッドは「任意」の要素なのでデフォルト実装を用意しておく
@@ -65,6 +91,21 @@ export abstract class Resource<T, O extends object, Q extends object> {
 
       case Type.NOT_FOUND:
         return this.createNotFoundResponse(request);
+
+      case Type.UNAUTHORIZED:
+        return this.createUnauthorizedResponse(request);
+
+      case Type.FORBIDDEN:
+        return this.createForbiddenResponse(request);
+
+      case Type.CONFLICT:
+        return this.createConflictResponse(request);
+
+      case Type.SERVICE_UNAVAILABLE:
+        return this.createServiceUnavailableResponse(request);
+
+      case Type.INTERNAL_SERVER_ERROR:
+        return this.createInternalServerErrorResponse(request);
     }
 
     return this.createCustomResponse(request) ?? new Response(null, { status: 500 });

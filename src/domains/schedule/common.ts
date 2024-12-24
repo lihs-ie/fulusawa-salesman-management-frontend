@@ -21,6 +21,20 @@ export const Status = {
 
 export type Status = (typeof Status)[keyof typeof Status];
 
+export const isStatus = (value: unknown): value is Status => {
+  const candidates = Set(Object.values(Status));
+
+  return candidates.has(value as Status);
+};
+
+export const asStatus = (value: unknown): Status => {
+  if (isStatus(value)) {
+    return value;
+  }
+
+  throw new Error(`Status ${value} is not supported.`);
+};
+
 export class Content extends ValueObject {
   public static readonly MAX_TITLE_LENGTH = 255;
 

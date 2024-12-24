@@ -16,7 +16,7 @@ export const cemeterySchema = z
     customer: customerIdentifierSchema,
     name: z.string().min(1).max(Cemetery.MAX_NAME_LENGTH),
     type: cemeteryTypeSchema,
-    construction: z.date(),
+    construction: z.string().date(),
     inHouse: z.boolean(),
   })
   .brand('CemeterySchema');
@@ -30,7 +30,7 @@ export const CemeteryHydrator: Hydrator<Cemetery, CemeteryPayload> = {
       CustomerIdentifierHydrator.hydrate(value.customer),
       value.name,
       value.type,
-      value.construction,
+      new Date(value.construction),
       value.inHouse
     ),
 
@@ -40,7 +40,7 @@ export const CemeteryHydrator: Hydrator<Cemetery, CemeteryPayload> = {
       customer: CustomerIdentifierHydrator.dehydrate(value.customer),
       name: value.name,
       type: value.type,
-      construction: value.construction,
+      construction: value.construction.toISOString(),
       inHouse: value.inHouse,
     }) as CemeteryPayload,
 

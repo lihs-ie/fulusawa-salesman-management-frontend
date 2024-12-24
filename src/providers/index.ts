@@ -1,5 +1,4 @@
+import './acl';
 import './use-cases';
 
-import { container } from './container';
-
-export { container };
+export { container } from './container';

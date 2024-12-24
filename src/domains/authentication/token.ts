@@ -1,4 +1,4 @@
-import { Map } from 'immutable';
+import { Map, Set } from 'immutable';
 
 import { ValueObject } from 'domains/common/value-object';
 
@@ -8,6 +8,20 @@ export const TokenType = {
 } as const;
 
 export type TokenType = (typeof TokenType)[keyof typeof TokenType];
+
+export const isTokenType = (value: unknown): value is TokenType => {
+  const candidates = Set(Object.values(TokenType));
+
+  return candidates.has(value as TokenType);
+};
+
+export const asTokenType = (value: unknown): TokenType => {
+  if (isTokenType(value)) {
+    return value;
+  }
+
+  throw new Error(`TokenType ${value} is not supported.`);
+};
 
 export class Token extends ValueObject {
   public constructor(

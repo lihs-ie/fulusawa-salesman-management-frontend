@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 
 import { Address, MailAddress, PhoneNumber, UniversallyUniqueIdentifier } from 'domains/common';
 
@@ -16,6 +16,20 @@ export const Role = {
 };
 
 export type Role = (typeof Role)[keyof typeof Role];
+
+export const isRole = (value: unknown): value is Role => {
+  const candidates = Set(Object.values(Role));
+
+  return candidates.has(value as Role);
+};
+
+export const asRole = (value: unknown): Role => {
+  if (isRole(value)) {
+    return value;
+  }
+
+  throw new Error(`Role ${value} is not supported.`);
+};
 
 export class User {
   public static readonly MAX_FIRST_NAME_LENGTH = 50;
