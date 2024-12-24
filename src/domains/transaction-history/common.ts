@@ -1,4 +1,5 @@
 import { List, Set } from 'immutable';
+import { injectable } from 'inversify';
 
 import { UniversallyUniqueIdentifier } from 'domains/common';
 import { CustomerIdentifier } from 'domains/customer';
@@ -60,6 +61,7 @@ export class TransactionHistory {
   }
 }
 
+@injectable()
 export abstract class Repository {
   public abstract add(transactionHistory: TransactionHistory): Promise<void>;
 

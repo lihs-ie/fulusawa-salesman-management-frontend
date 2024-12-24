@@ -1,4 +1,5 @@
 import { List, Set } from 'immutable';
+import { injectable } from 'inversify';
 
 import { Address, MailAddress, PhoneNumber, UniversallyUniqueIdentifier } from 'domains/common';
 
@@ -56,6 +57,7 @@ export class User {
   }
 }
 
+@injectable()
 export abstract class Repository {
   public abstract add(user: User): Promise<void>;
 

@@ -37,7 +37,7 @@ export class Authentication {
     await this.repository.revoke(value, type);
   }
 
-  public async introspection(value: string, type: TokenType): Promise<boolean> {
-    return await this.repository.introspection(value, type);
+  public async introspect(value: string, type: TokenType): Promise<boolean> {
+    return await this.repository.introspect(value, type);
   }
 }

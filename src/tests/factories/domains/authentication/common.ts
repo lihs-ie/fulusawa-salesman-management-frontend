@@ -165,7 +165,7 @@ export class RepositoryFactory extends Factory<Repository, RepositoryProperties>
         this.onRevoke?.(instance);
       }
 
-      public async introspection(value: string, type: TokenType): Promise<boolean> {
+      public async introspect(value: string, type: TokenType): Promise<boolean> {
         const target = this.instances.find((instance) => {
           if (type === TokenType.ACCESS) {
             return instance.accessToken?.value === value;
